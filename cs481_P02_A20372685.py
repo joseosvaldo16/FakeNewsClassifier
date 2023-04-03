@@ -12,8 +12,6 @@ from sklearn.feature_extraction.text import CountVectorizer
 from collections import defaultdict
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
 
-
-
 # %%
 lowercase = None
 if len(sys.argv) == 2 and sys.argv[1].upper() == 'YES':
@@ -25,12 +23,9 @@ else:
 print("Vera, Jose, A20372685 solution:")
 print(f"Ignored pre-processing step: {ignore_step.upper()}")
 
-
-# %%
 fake_news = pd.read_csv('Fake.csv')
 real_news = pd.read_csv('True.csv')
 
-# %%
 fake_news['class'] = 0  
 real_news['class'] = 1  
 
@@ -41,14 +36,14 @@ data = data.sample(frac=1).reset_index(drop=True) ##shuffle data
 data['text'] = data['title'] + ' ' + data['text']  ## Combine title and text
 
 # %%
-print("Pre-processing text...")
+print("Pre-processing text. Might take up to 4-5 minutes...")
 ps = PorterStemmer() #Stemmer that will be used for stemming
 stop_words = set(stopwords.words('english'))
 ##If argument YES given, ingore_step will be 'lowercase', and lowercasing step will be skipped.
 if ignore_step != 'lowercase':
     data['text'] = data['text'].apply(lambda x: x.lower())  # Lowercase
 ##Remove Stopwords
-data['text'] = data['text'].apply(lambda x: ' '.join([word for word in x.split() if word not in stop_words]))  # Remove stop words
+data['text'] = data['text'].apply(lambda x: ' '.join([word for word in x.split() if word not in stop_words]))
 ##Perfrom Stemming
 data['text'] = list(map(lambda x: ' '.join(ps.stem(word) for word in x.split()), data['text']))
 ##Remove non alphatical characters
@@ -60,19 +55,13 @@ X_train, X_test, y_train, y_test = train_test_split(data['text'], data['class'],
 # %%
 def train_naive_bayes(X_train):
     ##Binary count vectorizer object
-    vectorizer = CountVectorizer(binary=True)
-
-    vectorizer.fit(X_train)
-
+    vectorizer = CountVectorizer(binary=True).fit(X_train)
     X_train_bow_matrix = vectorizer.transform(X_train).toarray()
-    ##Separate BOW into different matrices
-    
+    ##Separate BOW into different matrices 
     X_fake = X_train_bow_matrix[y_train == 0, :]
     X_real = X_train_bow_matrix[y_train == 1, :]
-
-    log_prior = {}
-
     # Calculate P(c) term
+    log_prior = {}
     numb_doc = len(X_train_bow_matrix)
     numb_classes = 2
     class_counts = np.bincount(y_train)
@@ -129,8 +118,6 @@ def test_naive_bayes(X_test, log_prior, log_likelihood, C, V):
 
 # %%
 print('Training classifier…')
-
-# %%
 log_prior, log_likelihood, V = train_naive_bayes(X_train)
 
 # %%
@@ -140,7 +127,6 @@ y_pred, sum_c = test_naive_bayes(X_test, log_prior, log_likelihood, [0,1], V)
 # %%
 print("Test results / metrics:\n")
 
-# %%
 ## create confusion matrix and calculate metrics
 conf_mat = confusion_matrix(y_test, y_pred)
 
