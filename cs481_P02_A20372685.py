@@ -10,6 +10,7 @@ from nltk.stem import PorterStemmer
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from collections import defaultdict
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
 
 
 
@@ -33,8 +34,10 @@ real_news = pd.read_csv('True.csv')
 fake_news['class'] = 0  
 real_news['class'] = 1  
 
-data = pd.concat([fake_news, real_news], ignore_index=True)
-data = data.sample(frac=1).reset_index(drop=True)  ## Shuffle
+# Create a list of DataFrames to concatenate
+dfs = [fake_news[['title', 'text', 'class']], real_news[['title', 'text', 'class']]]
+data = pd.concat(dfs, ignore_index=True)
+data = data.sample(frac=1).reset_index(drop=True) ##shuffle data
 data['text'] = data['title'] + ' ' + data['text']  ## Combine title and text
 
 # %%
@@ -47,22 +50,17 @@ if ignore_step != 'lowercase':
 ##Remove Stopwords
 data['text'] = data['text'].apply(lambda x: ' '.join([word for word in x.split() if word not in stop_words]))  # Remove stop words
 ##Perfrom Stemming
-data['text'] = [' '.join([ps.stem(word) for word in x.split()]) for x in data['text']]
-
+data['text'] = list(map(lambda x: ' '.join(ps.stem(word) for word in x.split()), data['text']))
+##Remove non alphatical characters
+data['text'] = data['text'].apply(lambda text: re.sub(r'[^a-zA-Z\s]', ' ', text))
 
 # %%
 X_train, X_test, y_train, y_test = train_test_split(data['text'], data['class'], test_size=0.2, random_state=42)
 
 # %%
-def my_preprocessor(text):
-    # Remove non-alphabetical characters
-    text = re.sub(r'[^a-zA-Z\s]', ' ', text)
-    return text
-
-# %%
 def train_naive_bayes(X_train):
     ##Binary count vectorizer object
-    vectorizer = CountVectorizer(binary=True, preprocessor= my_preprocessor)
+    vectorizer = CountVectorizer(binary=True)
 
     vectorizer.fit(X_train)
 
@@ -114,7 +112,7 @@ def train_naive_bayes(X_train):
 # %%
 def test_naive_bayes(X_test, log_prior, log_likelihood, C, V):
     
-    vectorizer = CountVectorizer(vocabulary=V, binary=True, preprocessor=my_preprocessor)
+    vectorizer = CountVectorizer(vocabulary=V, binary=True)
     testdoc = vectorizer.transform(X_test).toarray()
 
     # Create a matrix of log likelihoods for all words in the vocabulary for each class
@@ -143,7 +141,6 @@ y_pred, sum_c = test_naive_bayes(X_test, log_prior, log_likelihood, [0,1], V)
 print("Test results / metrics:\n")
 
 # %%
-from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
 ## create confusion matrix and calculate metrics
 conf_mat = confusion_matrix(y_test, y_pred)
 
@@ -179,7 +176,8 @@ while True:
     #Remove stop words and rejoin the remaining words back into a string
     filtered_sentence = ' '.join([word for word in sentence.split() if word.lower() not in stop_words]) 
     ##Perfrom Stemming
-    text = [' '.join([ps.stem(word) for word in filtered_sentence.split()])]
+    text = ' '.join([ps.stem(word) for word in filtered_sentence.split()])
+    text = [re.sub(r'[^a-zA-Z\s]', ' ', text)]
 
     class_label, class_probabilities = test_naive_bayes(text,log_prior, log_likelihood, [0,1], V)
     if class_label[0] == 0:
