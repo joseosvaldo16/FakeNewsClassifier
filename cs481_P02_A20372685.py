@@ -38,7 +38,7 @@ data = data.sample(frac=1).reset_index(drop=True)  ## Shuffle
 data['text'] = data['title'] + ' ' + data['text']  ## Combine title and text
 
 # %%
-print("Pre-processing text. May take up to 5 minutes...")
+print("Pre-processing text...")
 ps = PorterStemmer() #Stemmer that will be used for stemming
 stop_words = set(stopwords.words('english'))
 ##If argument YES given, ingore_step will be 'lowercase', and lowercasing step will be skipped.
@@ -173,7 +173,15 @@ print("F-score:", f1)
 ##Ask user for input sentence then apply classifier
 while True:
     sentence = input("Enter your sentence: ")
-    class_label, class_probabilities = test_naive_bayes([sentence],log_prior, log_likelihood, [0,1], V)
+    ##If argument YES given, ingore_step will be 'lowercase', and lowercasing step will be skipped.
+    if ignore_step != 'lowercase':
+        sentence = sentence.lower()
+    #Remove stop words and rejoin the remaining words back into a string
+    filtered_sentence = ' '.join([word for word in sentence.split() if word.lower() not in stop_words]) 
+    ##Perfrom Stemming
+    text = [' '.join([ps.stem(word) for word in filtered_sentence.split()])]
+
+    class_label, class_probabilities = test_naive_bayes(text,log_prior, log_likelihood, [0,1], V)
     if class_label[0] == 0:
         other_label = 1
         class_name = 'Fake'
