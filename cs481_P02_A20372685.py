@@ -46,8 +46,6 @@ if ignore_step != 'lowercase':
 data['text'] = data['text'].apply(lambda x: ' '.join([word for word in x.split() if word not in stop_words]))
 ##Perfrom Stemming
 data['text'] = list(map(lambda x: ' '.join(ps.stem(word) for word in x.split()), data['text']))
-##Remove non alphatical characters
-data['text'] = data['text'].apply(lambda text: re.sub(r'[^a-zA-Z\s]', ' ', text))
 
 # %%
 X_train, X_test, y_train, y_test = train_test_split(data['text'], data['class'], test_size=0.2, random_state=42)
@@ -163,7 +161,6 @@ while True:
     filtered_sentence = ' '.join([word for word in sentence.split() if word.lower() not in stop_words]) 
     ##Perfrom Stemming
     text = ' '.join([ps.stem(word) for word in filtered_sentence.split()])
-    text = [re.sub(r'[^a-zA-Z\s]', ' ', text)]
 
     class_label, class_probabilities = test_naive_bayes(text,log_prior, log_likelihood, [0,1], V)
     if class_label[0] == 0:
